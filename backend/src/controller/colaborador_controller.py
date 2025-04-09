@@ -20,7 +20,6 @@ def cadastrar_novo_colaborador():
     for colaborador in dados:
         if colaborador['cracha'] == dados_requisicao['cracha']:
             return jsonify({'mensagem': 'Colaborador já cadastrado!'}), 400;
-            break;
 
     
     novo_colaborador = {
@@ -32,7 +31,28 @@ def cadastrar_novo_colaborador():
     dados.append(novo_colaborador)
     return jsonify({'mensagem': 'Colaborador cadastrado com sucesso!'}), 201;
 
-# @bp_atualizar_colaborador.rout('/atualizar/<int>:id_colaborador',methods=['PUT'])
-#     def atualizar_dados_colaborador(id_colaborador):
+@bp_colaborador.route('/atualizar/<int:id_colaborador>',methods=['PUT'])
+def atualizar_dados_colaborador(id_colaborador):
+    dados_requisicao = request.get_json()
+    
+    colaborador_encontrado = None
+    
+    for colaborador in dados:
+        if colaborador['id'] == id_colaborador:
+            colaborador_encontrado = colaborador
+            
+        if not colaborador_encontrado:
+            return jsonify({'mensagem': 'Colaborador não encontrado!'}), 404;
+            
         
-
+    if not colaborador_encontrado:
+        return jsonify({'mensagem': 'Colaborador não encontrado!'}), 404;
+    
+    atualizar_colaborador = {
+        'nome': dados_requisicao['nome'],
+        'cargo': dados_requisicao['cargo'],
+        'cracha': dados_requisicao['cracha'],
+    }
+    
+    colaborador_encontrado.update(atualizar_colaborador)
+    return jsonify({'mensagem': 'Colaborador atualizado com sucesso!'}), 200;
