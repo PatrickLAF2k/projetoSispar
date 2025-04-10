@@ -1,58 +1,39 @@
-from src.database.db import dados
+# Importando os módulos necessários do Flask
 from flask import Blueprint, request, jsonify
 
+# Importando o modelo de Colaborador e a instância do banco de dados
+from src.model.colaborador_model import Colaborador
+from src.model import db
+
+# Criando um Blueprint para organizar melhor as rotas relacionadas a colaboradores.
+# Isso permite separar as funcionalidades em arquivos menores e reutilizáveis.
 bp_colaborador = Blueprint('colaborador', __name__, url_prefix='/colaborador')
 
-@bp_colaborador.route('/pegar-dados', methods=['GET'])
-def pegar_dados():
-    
-    return dados;
-
+# Criando a rota POST /colaborador/cadastrar
 @bp_colaborador.route('/cadastrar', methods=['POST'])
 def cadastrar_novo_colaborador():
+    # Pega os dados enviados no corpo da requisição em formato JSON
     dados_requisicao = request.get_json()
     
-    # Verificado de campos obrigatorios
-    if dados_requisicao['nome'] == '' or dados_requisicao['cargo'] == '' or dados_requisicao['cracha'] == '':
-        return jsonify({'mensagem': 'Todos os campos são obrigatorios!'}), 400;
+    # Verifica se os campos obrigatórios 'nome' e 'cargo' estão vazios
+    if dados_requisicao['nome'] == '' or dados_requisicao['cargo'] == '':
+        # Retorna uma mensagem de erro e o status HTTP 400 (Bad Request)
+        return jsonify({'mensagem': 'Todos os campos são obrigatorios!'}), 400
     
-    # Loop para verificar se o crachá já existe
-    for colaborador in dados:
-        if colaborador['cracha'] == dados_requisicao['cracha']:
-            return jsonify({'mensagem': 'Colaborador já cadastrado!'}), 400;
+    # Cria uma nova instância de Colaborador com os dados recebidos
+    novo_colaborador = Colaborador(
+        nome=dados_requisicao['nome'],
+        email=dados_requisicao['email'],
+        senha=dados_requisicao['senha'],
+        cargo=dados_requisicao['cargo'],
+        salario=dados_requisicao['salario']
+    )
+    
+    # Adiciona o novo colaborador à sessão do banco de dados
+    db.session.add(novo_colaborador)
 
-    
-    novo_colaborador = {
-        'id': len(dados) + 1,
-        'nome': dados_requisicao['nome'],
-        'cargo': dados_requisicao['cargo'],
-        'cracha': dados_requisicao['cracha'],
-    }
-    dados.append(novo_colaborador)
-    return jsonify({'mensagem': 'Colaborador cadastrado com sucesso!'}), 201;
-
-@bp_colaborador.route('/atualizar/<int:id_colaborador>',methods=['PUT'])
-def atualizar_dados_colaborador(id_colaborador):
-    dados_requisicao = request.get_json()
-    
-    colaborador_encontrado = None
-    
-    for colaborador in dados:
-        if colaborador['id'] == id_colaborador:
-            colaborador_encontrado = colaborador
-            
-        if not colaborador_encontrado:
-            return jsonify({'mensagem': 'Colaborador não encontrado!'}), 404;
-            
-        
-    if not colaborador_encontrado:
-        return jsonify({'mensagem': 'Colaborador não encontrado!'}), 404;
-    
-    atualizar_colaborador = {
-        'nome': dados_requisicao['nome'],
-        'cargo': dados_requisicao['cargo'],
-        'cracha': dados_requisicao['cracha'],
-    }
-    
-    colaborador_encontrado.update(atualizar_colaborador)
-    return jsonify({'mensagem': 'Colaborador atualizado com sucesso!'}), 200;
+    # Salva (commit) as mudanças no banco de dados
+    db.session.commit()
+   
+    # Retorna uma mensagem de sucesso e o status HTTP 201 (Created)
+    return jsonify({'mensagem': 'Colaborador cadastrado com sucesso!'}), 201
